@@ -40,35 +40,31 @@ class SessionMiddleware {
      * Initiate the store by reading values from the
      * driver.
      */
-    await ctx.session.instantiate()
-    debug('session store initiated')
+    if (!ctx.request.url().startsWith('/webhook/')) {
 
-    /**
-     * Sharing flash messages with the view when view
-     * exists in the session and there is share
-     * method on it too.
-     */
-    const flashMessages = ctx.session.pull('__flash__', {})
+        const flashMessages = ctx.session.pull('__flash__', {})
 
-    /**
-     * Add flash message to a key inside session when in
-     * testing mode. This makes assertions easy.
-     */
-    if (process.env.NODE_ENV === 'testing') {
-      ctx.session.put('__flash__old', flashMessages)
+        /**
+         * Add flash message to a key inside session when in
+         * testing mode. This makes assertions easy.
+         */
+        if (process.env.NODE_ENV === 'testing') {
+            ctx.session.put('__flash__old', flashMessages)
+        }
+
+        /**
+         * Sharing the flashMessages on the view
+         */
+        if (ctx.view && typeof (ctx.view.share) === 'function') {
+            ctx.view.share({ flashMessages })
+        }
+
+        /**
+         * Sharing the flashMessages on the request
+         */
+        ctx.request.flashMessages = flashMessages
+
     }
-
-    /**
-     * Sharing the flashMessages on the view
-     */
-    if (ctx.view && typeof (ctx.view.share) === 'function') {
-      ctx.view.share({ flashMessages })
-    }
-
-    /**
-     * Sharing the flashMessages on the request
-     */
-    ctx.request.flashMessages = flashMessages
 
     /**
      * Move the chain
@@ -80,7 +76,7 @@ class SessionMiddleware {
      * mode. Otherwise the end user will have to save them
      * manually.
      */
-    if (ctx.response.implicitEnd) {
+    if (ctx.response.implicitEnd && !ctx.request.url().startsWith('/webhook/')) {
       await ctx.session.commit()
     }
   }
