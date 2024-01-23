@@ -40,6 +40,9 @@ class SessionMiddleware {
      * Initiate the store by reading values from the
      * driver.
      */
+    await ctx.session.instantiate()
+    debug('session store initiated')
+
     if (!ctx.request.url().startsWith('/webhook/')) {
 
         const flashMessages = ctx.session.pull('__flash__', {})
